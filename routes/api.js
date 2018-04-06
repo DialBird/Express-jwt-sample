@@ -17,6 +17,7 @@ router.post('/authenticate', (req, res) => {
       });
       return;
     }
+
     if (user.password != req.body.password) {
       res.json({
         success: false,
@@ -24,6 +25,7 @@ router.post('/authenticate', (req, res) => {
       });
       return;
     }
+
     const token = jwt.sign(user.toJSON(), config.secret, {
       expiresIn: '24h',
     });
@@ -33,6 +35,29 @@ router.post('/authenticate', (req, res) => {
       message: 'Authentication successfully finished.',
       token: token,
     });
+  });
+});
+
+router.use((req, res, next) => {
+  const token = req.headers['authorization'].split(' ')[1];
+
+  if (!token) {
+    return res.status(403).send({
+      success: false,
+      message: 'No token provided.',
+    });
+  }
+
+  jwt.verify(token, config.secret, (err, decoded) => {
+    if (err) {
+      return res.json({
+        success: false,
+        message: 'Invalid token',
+      });
+    }
+
+    req.decoded = decoded;
+    next();
   });
 });
 
